@@ -1,0 +1,13 @@
+---
+// Dashboard widget shell (server component): the card chrome plus a hydrated
+// island. HYDRATION: `client:visible`, not `client:load` — the dashboard renders
+// a dozen widgets, and eager hydration meant a dozen React roots and a dozen
+// fetches on every dashboard load, including the ones switched off in a user's
+// layout (which are display:none, so the observer never fires for them at all).
+import WidgetBody from "../islands/WidgetBody.tsx";
+---
+
+<article class="tds-widget">
+  <h3 class="tds-widget__title">Visitenkarten</h3>
+  <WidgetBody client:visible />
+</article>

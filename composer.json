@@ -1,0 +1,40 @@
+{
+  "name": "tracht-digital-solutions/tds-ext-cards",
+  "description": "TDS-Erweiterung: Visitenkarten-Seiten (Backend-Modul).",
+  "type": "library",
+  "license": "proprietary",
+  "version": "0.1.0",
+  "require": {
+    "php": ">=8.1",
+    "slim/slim": "^4.13",
+    "tracht-digital-solutions/tds-frontend-contract": "^1.0.0"
+  },
+  "require-dev": {
+    "php-di/php-di": "^7.0",
+    "phpunit/phpunit": "^10.5",
+    "slim/psr7": "^1.6"
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/Tracht-Digital-Solutions/tds-frontend-contract-pkg"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Tds\\Ext\\Cards\\": "php/src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tds\\Ext\\Cards\\Tests\\": "php/tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "preferred-install": "dist"
+  },
+  "scripts": {
+    "test": "phpunit"
+  }
+}

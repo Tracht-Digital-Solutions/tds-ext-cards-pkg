@@ -1,0 +1,13 @@
+---
+// Einstellungen → Visitenkarten: the connection to the card site, rendered by
+// the base settings host via virtual:frontend-settings.
+//
+// Deliberately NOT on the editing screen. Connecting a site is something you do
+// once; connection fields above the daily content are noise at best and an
+// invitation to break a working site at worst. Same split as the blog registry.
+import CardsConnection from "./CardsConnection.tsx";
+---
+
+<div class="tds-settings-section__body">
+  <CardsConnection client:load />
+</div>

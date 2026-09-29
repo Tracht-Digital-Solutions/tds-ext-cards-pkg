@@ -1,0 +1,17 @@
+---
+// Visitenkarten — the extension's own screen, injected into the host build via
+// the manifest's route slot. Everything interactive lives in the island; this
+// file is the shell the host wraps in its layout.
+import CardsList from "../islands/CardsList.tsx";
+---
+
+<section class="tds-page">
+  <div class="tds-page__head">
+    <h1 class="tds-page__title">Visitenkarten</h1>
+    <p class="tds-page__lead">
+      Eine Seite je Kunde. Sie läuft auf einer eigenen Domain und immer auch auf
+      <code>karte.tracht-digital.de</code>.
+    </p>
+  </div>
+  <CardsList client:load />
+</section>
