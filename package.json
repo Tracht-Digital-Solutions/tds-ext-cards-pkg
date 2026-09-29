@@ -1,6 +1,6 @@
 {
   "name": "@tracht-digital-solutions/tds-ext-cards",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Visitenkarten-Seiten: eine Linktree-Seite je Kunde, im Panel angelegt, auf eigener Domain ausgeliefert.",
   "license": "UNLICENSED",
   "private": false,
