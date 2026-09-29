@@ -148,7 +148,7 @@ export default function BlockList({ blocks, onChange, disabled = false }: BlockL
           <button
             key={entry.id}
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-ghost"
             disabled={disabled}
             title={entry.hint}
             onClick={() => add(entry.id)}
@@ -441,7 +441,7 @@ function RowEditor<T>({
       </ul>
       <button
         type="button"
-        className="btn btn-secondary"
+        className="btn btn-ghost"
         disabled={disabled}
         onClick={() => onChange([...rows, structuredClone(empty)])}
       >

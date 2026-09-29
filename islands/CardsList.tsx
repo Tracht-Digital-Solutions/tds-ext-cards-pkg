@@ -461,11 +461,11 @@ function CardEditor({ card }: { card: Card }) {
           {busy ? "Wird gespeichert …" : "Speichern"}
         </button>
         {draft.draft ? (
-          <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void save(true)}>
+          <button type="button" className="btn btn-accent" disabled={busy} onClick={() => void save(true)}>
             Speichern und veröffentlichen
           </button>
         ) : (
-          <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void save(false)}>
+          <button type="button" className="btn btn-accent" disabled={busy} onClick={() => void save(false)}>
             Zurück auf Entwurf
           </button>
         )}

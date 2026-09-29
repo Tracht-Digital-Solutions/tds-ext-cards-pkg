@@ -1,9 +1,46 @@
-# AGENTS.md — tds-ext-template-pkg
+# AGENTS.md — tds-ext-cards-pkg
 
-The clone base for TDS frontend extensions. Read `tds-frontend-contract-pkg`'s AGENTS.md
-first — extensions implement that contract. `tds-ext-time-tracker-pkg` is the worked
-reference; this is the empty scaffold with the same shape + a rename checklist
-(see README.md).
+Visitenkarten-Seiten: eine Linktree-Seite je Kunde, im Panel angelegt, von
+`tds-card-frontend` auf der eigenen Domain des Kunden ausgeliefert. Read
+`tds-frontend-contract-pkg`'s AGENTS.md first — extensions implement that
+contract — and `tds-core-frontend-api`'s for the host this composes into.
+
+**What this package is not: the renderer.** It owns the data, the API and the
+panel screen. The public pages live in `tds-card-frontend`, and the block model
+both halves obey lives in `tds-shared` (`schemas/cardBlocks`) — see README.md
+for why it sits there and not here.
+
+## The five things that are specific to this extension
+
+1. **`Support/CardDomain::normalize()` has a twin in another repository.**
+   `tds-card-frontend/src/lib/host.ts` reads a request's `Host` with exactly
+   these rules: lower-case, strip `www.`, strip the port, strip a trailing dot,
+   and *refuse* — never strip — a scheme or a path. This function decides which
+   customer's card a visitor sees. If the two disagree by one dot, a card
+   answers 404 on its own domain; a 404 is never cached, so it keeps answering
+   404 while every deployment marker stays green. Change one, change both, and
+   `CardDomainTest` is where the cases are written down.
+2. **There is no site registry, and that is the design.** One app answers every
+   customer domain and picks the card by `Host`, so there is exactly one
+   connection (`cards`/`default`), one site key, one cache origin. The customer
+   axis is a row in `card_page`. The customer domains are therefore NOT origins
+   of this API — no browser on a card page calls it — so there is no CORS entry
+   and no second pairing per domain.
+3. **`siteKeyRoutes()` needs BOTH `/content/card` and `/content/cards`**, and it
+   looks as if one would do. `SiteKeyMiddleware::matches` compares on segment
+   boundaries (deliberately, so `/content/blogroll` is not covered by
+   `/content/blog`), so the plural route would have been served unprotected
+   while looking exactly like a route somebody chose to leave open.
+   `CardsApiDocsTest` asserts both directions.
+4. **The public reads filter drafts in SQL, never in PHP.** A card that is not
+   published must not be in the result set at all; a filter applied after the
+   fetch is one `if` away from serving a draft on a customer's domain, and the
+   mistake would be invisible in review. The public shape hard-codes
+   `draft => false` for the same reason.
+5. **`published_at` comes from the DATABASE** (`CardRepository::now()`), not
+   from `date()` and not from `gmdate()`. The production session runs in Berlin
+   time, so the row's own `CURRENT_TIMESTAMP` columns are local while PHP's
+   `gmdate` is UTC — a card would look published an hour or two in the future.
 
 ## Shape (identical to any extension)
 
@@ -13,8 +50,8 @@ reference; this is the empty scaffold with the same shape + a rename checklist
 - `php/src/*Module.php` — the backend `Module`.
 - `php/db/migrations/*` — Phinx migrations, class names **prefixed with the
   module id** (in-process auto-migrator = one process = no name reuse) — and the
-  **file name must map to the class** (`<version>_template_create_example.php` ⇒
-  `TemplateCreateExample`), so the prefix goes first in both. A mismatch throws
+  **file name must map to the class** (`20260929000001_create_cards_page.php` ⇒
+  `CreateCardsPage`), so the module name goes in both. A mismatch throws
   `Could not find class …` during the *scan* and aborts every extension's
   migrations, not just yours.
 - `php/docs/api.php` — one entry per mounted route (summary, params, responses,
@@ -172,12 +209,27 @@ dashboard page.)
   resolves — so the omission is invisible until someone installs the package
   standalone. Keep it declared.
 
-## When cloned
+## Migrations: this module owns the band `20260929`
 
-Do the README rename checklist in full — a leftover `template`/`Template`/
-`tds-ext-template-pkg` string will collide with this template or misresolve a
-specifier. `composeExtensions` / `ModuleRegistry` hard-error on a duplicate id, so
-a missed rename fails loudly at the host build rather than silently.
+Every enabled extension shares ONE `phinxlog` and is included into ONE PHP
+process, so three mistakes abort the run for **every** module rather than just
+this one: a reused class name (an uncatchable fatal redeclaration), a file name
+that does not map to its class (it throws while the set is *scanned*), and a
+reused version prefix.
+
+`php/tests/CardsMigrationsTest.php` pins all three, and two more that have each
+taken production down once:
+
+- **`signed => false` on every integer `*_id`.** Production is MySQL 8; local
+  and CI are often MariaDB, which silently corrects the signedness mismatch
+  MySQL 8 rejects outright.
+- **No adapter internals.** `quoteValue()` is protected on `PdoAdapter` and
+  absent from the `TimedOutputAdapter` a migration actually receives. One such
+  call in the website-CMS died on every run and blocked every migration queued
+  behind it, across all modules.
+
+A migration that has ever been in the tree is never deleted — empty its `up()`
+instead, or Phinx's ledger and the files disagree.
 
 ## Tests
 - **CI runs `test:run` since 2026-08-25 — before that, none of these suites
@@ -205,38 +257,46 @@ a missed rename fails loudly at the host build rather than silently.
 
 
 ```bash
-npm run test:run    # vitest, 45 tests (jsdom per-file via a @vitest-environment docblock)
+npm run test:run        # vitest, 53 tests
+php vendor/bin/phpunit  # 72 tests
 ```
 
-This repo is not a feature — it is the **clone base** for every new extension —
-so the tests target a different risk from the other packages: not "does it
-work" but **"does cloning it work"**.
+The suites target what can only fail far from here — in someone else's build,
+or on a customer's domain.
 
-- `tests/rename.test.ts` — the clone checklist, enforced. Every identifier,
-  path and specifier must be spelled with the same `template` token, in a form
-  a find/replace catches; the package name must match; and **nothing may be
-  left over from a real extension** (a stray `lexware:read` or `/tickets` path
-  here is copied silently into the next four extensions somebody starts). It
-  also asserts the manifest still exercises **all six contribution slots** —
-  the template doubles as the worked reference for `frontend-contract`, and a
-  slot that quietly disappears is one the next author never learns exists.
-  > The foreign-name check is scoped to ids/paths/specifiers, NOT the whole
-  > manifest: nav `group` values are shared sidebar buckets ("tools",
-  > "verwaltung", "work") that every extension legitimately reuses, and labels
-  > are free German text.
-- `islands/WidgetBody.test.tsx` — the placeholder must **hydrate** (a clone
-  starts from something that demonstrably runs), keep the `.widget__metric`
-  class the dashboard grid styles, and make **no network request** — a clone
-  that leaves the placeholder in would hit a non-existent endpoint on every
-  dashboard load.
+**PHP**
+
+- `CardsMigrationsTest` — the band and the three abort-everything rules; see
+  *Migrations* above.
+- `CardsApiDocsTest` — the documented route set and the mounted route set are
+  the SAME set, in both directions, and every public route is covered by a
+  site-key prefix while no admin route is. It copies `SiteKeyMiddleware`'s own
+  boundary rule on purpose: a plain `str_starts_with` here would pass for a
+  prefix the middleware does not honour, which is the exact mistake it exists
+  to catch.
+- `CardDomainTest` — the normalisation, case by case, because it has a twin in
+  another repository (see point 1 at the top).
+- `CardBlocksTest`, `CardImageTest` — pure functions, no PDO, so they run with
+  no database. `CardImageTest` carries 1×1 images as hex rather than generating
+  them: the suite must not depend on `ext-gd`, which is the very extension the
+  production host does not guarantee.
+
+**Frontend**
+
 - `src/index.test.ts` + `tests/packaging.test.ts` — the manifest as a product
-  build sees it, and that every specifier resolves, is exported, and ships.
+  build sees it: every specifier resolves, is exported through `exports`, and
+  is inside the published `files` allow-list. A missing entry there is an
+  ENOENT in a product release, and a `tds-tool-*` package has already shipped
+  one.
+- `islands/CardsList.test.tsx` — the absolute API host (a relative path
+  satisfies every other assertion), spread-not-replace on save, a cache report
+  reported as what it is, a multipart upload with no JSON content type, and a
+  selection surviving a refresh.
+- `islands/BlockList.test.tsx` — spread-not-replace per block, two added blocks
+  being two objects, and reordering reachable by keyboard.
 
-`tests/rename.test.ts` also pins the version to the **0.1.x** line: a clone
-inherits it, and starting outside 0.1.x means the host's `^0.1.x` caret never
-picks the new extension up.
-
-Verified by mutation: 17 deliberate breakages introduced, 17 caught.
+`tests/packaging.test.ts` pins the version to the **0.1.x** line: the host
+caret-pins `^0.1.x`, so a minor bump here is invisible to it.
 
 ## Mobile layout
 
