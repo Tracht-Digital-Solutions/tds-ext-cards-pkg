@@ -25,6 +25,7 @@ use Tds\Frontend\Contract\SiteConnectionException;
 use Tds\Frontend\Contract\SiteConnections;
 use Tds\Frontend\Contract\SiteKeyProtected;
 use Tds\Frontend\Contract\UserContext;
+use Tds\Frontend\Contract\ModuleHttp;
 
 /**
  * Business-card pages: one linktree-style page per customer, created in the
@@ -51,6 +52,8 @@ use Tds\Frontend\Contract\UserContext;
  */
 final class CardsModule extends AbstractModule implements ApiDocSource, SiteKeyProtected
 {
+    use ModuleHttp;
+
     /** The single site connection this module owns. */
     public const RESOURCE_TYPE = 'cards';
     public const RESOURCE_ID = 'default';
@@ -742,23 +745,6 @@ final class CardsModule extends AbstractModule implements ApiDocSource, SiteKeyP
             'not_configured' => 503,
             default => 502,
         };
-    }
-
-    private static function require(UserContext $user, string $permission, Response $res): ?Response
-    {
-        if (!$user->isAuthenticated()) {
-            return self::json($res, ['error' => 'Unauthorized'], 401);
-        }
-        if (!$user->has($permission)) {
-            return self::json($res, ['error' => 'Forbidden'], 403);
-        }
-        return null;
-    }
-
-    private static function json(Response $res, mixed $data, int $status = 200): Response
-    {
-        $res->getBody()->write(json_encode($data, JSON_THROW_ON_ERROR));
-        return $res->withStatus($status)->withHeader('Content-Type', 'application/json');
     }
 
     /** @return list<array<string, mixed>> */
