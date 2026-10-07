@@ -1,0 +1,50 @@
+# Backend
+
+The PHP half is a `Module` (`php/src/CardsModule.php`, extends `AbstractModule`) that the
+composed `tds-core-frontend-api` mounts in one process with every other extension.
+
+## Migration band `20260929` and its extra rules
+
+`php/tests/CardsMigrationsTest.php` pins the three abort-everything rules (unique class,
+file name maps to class, unique version) and two more that each took production down once:
+
+- **`signed => false` on every integer `*_id`.** Production is MySQL 8; local and CI are often
+  MariaDB, which silently tolerates the signedness mismatch MySQL 8 rejects.
+- **No adapter internals.** `quoteValue()` is protected on `PdoAdapter` and absent from the
+  `TimedOutputAdapter` a migration receives. One such call in the website CMS failed on every run
+  and blocked every migration queued behind it, across all modules.
+
+A migration that has ever been in the tree is **never deleted**. Empty its `up()` instead, or
+Phinx's ledger and the files disagree.
+
+## Migrations (Phinx)
+
+All composed extensions share **one** `phinxlog`, so:
+
+- The migration **class name** and the **numeric version prefix** must be unique across
+  every extension. Put the module id in the class name.
+- The **file name must map to the class** (`<version>_<snake_case_class>.php`). A
+  mismatch throws `Could not find class …` during the scan and aborts **every**
+  extension's migrations, not just this one.
+- Migrations must survive MySQL 8 (production): no nullable primary-key columns, and
+  unsigned ids where the other side is unsigned.
+
+## API reference (`php/docs/api.php`)
+
+The module implements the contract's optional `ApiDocSource`. `php/docs/api.php` returns
+one entry per route (summary, params, responses, required permission). The admin
+frontend's API reference joins it onto the introspected Slim routes by
+`"<METHOD> <pattern>"`.
+
+- **`pattern` must be the Slim pattern verbatim**, inline regex included. A prettified
+  path silently produces an orphan doc and an undocumented route.
+- **`php/tests/CardsApiDocsTest.php` asserts both directions:** documented and registered
+  routes are the same set, every path placeholder is described, and a named permission
+  exists in `permissions()`. Adding or renaming a route without touching `docs/api.php`
+  fails there.
+
+## Contract dependency
+
+The published `tds-frontend-contract` is consumed VCS-only on the Composer side
+(`type: vcs`) and from GitHub Packages on the npm side. Never use a `path` repository;
+Composer fails on a missing path repo in CI.
