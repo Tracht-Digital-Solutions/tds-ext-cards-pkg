@@ -358,7 +358,7 @@ function CardEditor({ card }: { card: Card }) {
 
       <fieldset className="tds-stack">
         <legend>Feste Felder</legend>
-        <Text label="Name" value={draft.displayName} onChange={(v) => set("displayName", v)} max={160} />
+        <Text label="Name" value={draft.displayName} onChange={(v) => set("displayName", v ?? "")} max={160} />
         <Text label="Funktion" value={draft.role} onChange={(v) => set("role", v)} max={160} />
         <Text label="Firma" value={draft.companyName} onChange={(v) => set("companyName", v)} max={160} />
         <Text label="Kurzsatz" value={draft.tagline} onChange={(v) => set("tagline", v)} max={240} />
