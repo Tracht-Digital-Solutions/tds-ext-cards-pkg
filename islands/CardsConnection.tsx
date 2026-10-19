@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import { apiFetch } from "@tracht-digital-solutions/tds-shared/api";
-import { ConfirmDialog, Spinner, toast } from "@tracht-digital-solutions/tds-shared/components";
+import { apiFetch, sendJson } from "@tracht-digital-solutions/tds-shared/api";
+import { Alert, ConfirmDialog, Spinner, toast } from "@tracht-digital-solutions/tds-shared/components";
 import { invalidate, staleClass, useCachedJson } from "@tracht-digital-solutions/tds-shared/data";
 
 /**
@@ -45,11 +45,7 @@ export default function CardsConnection() {
     setError(null);
     setPairing(null);
     try {
-      const res = await apiFetch("/cards/connection/pairing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ origin }),
-      });
+      const res = await sendJson("/cards/connection/pairing", "POST", { origin });
       const body = (await res.json().catch(() => ({}))) as Pairing & { error?: string };
       if (!res.ok) {
         // 422 here almost always means `http://` behind Plesk. Saying so beats
@@ -96,9 +92,9 @@ export default function CardsConnection() {
   return (
     <div className={staleClass(stale, "tds-stack")} aria-busy={stale}>
       {error ? (
-        <p className="tds-alert tds-alert--danger" role="alert">
+        <Alert>
           {error}
-        </p>
+        </Alert>
       ) : null}
 
       {connection ? (

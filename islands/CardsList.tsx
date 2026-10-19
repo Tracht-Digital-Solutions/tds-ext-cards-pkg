@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { apiFetch, apiUrl } from "@tracht-digital-solutions/tds-shared/api";
-import { ConfirmDialog, Spinner, toast } from "@tracht-digital-solutions/tds-shared/components";
+import { apiFetch, apiUrl, sendJson } from "@tracht-digital-solutions/tds-shared/api";
+import { Alert, ConfirmDialog, Spinner, toast } from "@tracht-digital-solutions/tds-shared/components";
 import { invalidate, staleClass, useCachedJson } from "@tracht-digital-solutions/tds-shared/data";
 import {
   emptyCardDocument,
@@ -123,19 +123,19 @@ export default function CardsList() {
 
   if (cardsQuery.error && cards.length === 0) {
     return (
-      <p className="tds-alert tds-alert--danger" role="alert">
+      <Alert>
         Visitenkarten konnten nicht geladen werden ({cardsQuery.error.message}).
-      </p>
+      </Alert>
     );
   }
 
   return (
     <div className="tds-stack">
       {cardsQuery.error ? (
-        <p className="tds-alert tds-alert--danger" role="alert">
+        <Alert>
           Die Liste konnte nicht aktualisiert werden ({cardsQuery.error.message}). Was hier steht,
           ist möglicherweise veraltet.
-        </p>
+        </Alert>
       ) : null}
 
       <CreateCard onCreated={(slug) => setSelectedSlug(slug)} />
@@ -196,11 +196,7 @@ function CreateCard({ onCreated }: { onCreated: (slug: string) => void }) {
     setBusy(true);
     setError(null);
     try {
-      const res = await apiFetch("/cards", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName: name, slug: slug || undefined }),
-      });
+      const res = await sendJson("/cards", "POST", { displayName: name, slug: slug || undefined });
       const payload = (await res.json().catch(() => ({}))) as { error?: string; card?: Card };
       if (!res.ok) {
         // A rejected value belongs in the flow, next to the field that caused
@@ -232,9 +228,9 @@ function CreateCard({ onCreated }: { onCreated: (slug: string) => void }) {
     >
       <h2>Neue Visitenkarte</h2>
       {error ? (
-        <p className="tds-alert tds-alert--danger" role="alert">
+        <Alert>
           {error}
-        </p>
+        </Alert>
       ) : null}
       <div className="tds-row">
         <label className="tds-stack">
@@ -292,11 +288,7 @@ function CardEditor({ card }: { card: Card }) {
     setError(null);
     const nextDraft = publish === undefined ? draft.draft : !publish;
     try {
-      const res = await apiFetch(`/cards/${draft.slug}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...toPayload(draft), draft: nextDraft }),
-      });
+      const res = await sendJson(`/cards/${draft.slug}`, "PUT", { ...toPayload(draft), draft: nextDraft });
       const payload = (await res.json().catch(() => ({}))) as { error?: string } & CacheReport;
       if (!res.ok) {
         setError(payload.error ?? `Speichern fehlgeschlagen (${res.status}).`);
@@ -340,9 +332,9 @@ function CardEditor({ card }: { card: Card }) {
       </div>
 
       {error ? (
-        <p className="tds-alert tds-alert--danger" role="alert">
+        <Alert>
           {error}
-        </p>
+        </Alert>
       ) : null}
 
       <fieldset className="tds-stack">
@@ -599,9 +591,9 @@ function ImageField({
   return (
     <div className="tds-stack">
       {error ? (
-        <p className="tds-alert tds-alert--danger" role="alert">
+        <Alert>
           {error}
-        </p>
+        </Alert>
       ) : null}
       <div className="tds-row">
         <span>{label}</span>
