@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { apiFetch, apiUrl, sendJson } from "@tracht-digital-solutions/tds-shared/api";
 import { Alert, ConfirmDialog, Spinner, toast } from "@tracht-digital-solutions/tds-shared/components";
 import { invalidate, staleClass, useCachedJson } from "@tracht-digital-solutions/tds-shared/data";
+import { FileDropZone } from "@tracht-digital-solutions/tds-shared/dropzone";
 import {
   emptyCardDocument,
   type CardBlock,
@@ -616,19 +617,16 @@ function ImageField({
         ) : (
           <span className="marginalia">noch keins</span>
         )}
-        <input
-          className="field-boxed"
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          disabled={busy}
-          aria-label={`${label} hochladen`}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void upload(file);
-            e.target.value = "";
-          }}
-        />
       </div>
+      <FileDropZone
+        label={`${label} hochladen`}
+        hint="oder hierher ziehen · PNG, JPEG oder WebP"
+        activeLabel="Loslassen zum Hochladen"
+        accept="image/png,image/jpeg,image/webp"
+        disabled={busy}
+        onFiles={([file]) => void upload(file)}
+        onReject={() => toast.warning("Bitte ein PNG-, JPEG- oder WebP-Bild wählen.")}
+      />
     </div>
   );
 }
