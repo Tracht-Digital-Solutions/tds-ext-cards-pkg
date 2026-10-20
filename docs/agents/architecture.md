@@ -55,7 +55,8 @@ Tables `card_page` and `card_asset`; migrations `CreateCardsPage`, `CreateCardsA
 ## Panel islands
 
 - `CardsList` — spread, don't replace, on save; reports a cache result as what it is; uploads
-  as multipart without a JSON content type; keeps the selection across a refresh.
+  through tds-shared's `<FileDropZone>` (one per image kind; the input keeps the
+  `"<Bild> hochladen"` label) as multipart without a JSON content type; keeps the selection across a refresh.
 - `BlockList` — spread, don't replace, per block; two added blocks are two objects; reordering
   is keyboard-reachable.
 - `CardsConnection` — site connection and pairing.
